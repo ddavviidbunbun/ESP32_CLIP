@@ -1,0 +1,16 @@
+{
+  "folders": [
+	{
+		"path": "../../MYTAGS/myTag"
+	},
+	{
+		"name": "devMyTag",
+		"path": "."
+	},
+	{
+		"name": "UNOUNO",
+		"path": "../../UNO/UNOUNO"
+	}
+],
+  "settings": {}
+}
