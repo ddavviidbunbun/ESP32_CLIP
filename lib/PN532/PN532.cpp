@@ -42,13 +42,13 @@ void PN532::PrintHex(const uint8_t *data, const uint32_t numBytes)
 #ifdef ARDUINO
     for (uint8_t i = 0; i < numBytes; i++) {
         if (data[i] < 0x10) {
-            SERIAL.print(" 0");
+            Serial.print(" 0");
         } else {
-            SERIAL.print(' ');
+            Serial.print(' ');
         }
-        SERIAL.print(data[i], HEX);
+        Serial.print(data[i], HEX);
     }
-    SERIAL.println("");
+    Serial.println("");
 #else
     for (uint8_t i = 0; i < numBytes; i++) {
         printf(" %2X", data[i]);
@@ -73,22 +73,22 @@ void PN532::PrintHexChar(const uint8_t *data, const uint32_t numBytes)
 #ifdef ARDUINO
     for (uint8_t i = 0; i < numBytes; i++) {
         if (data[i] < 0x10) {
-            SERIAL.print(" 0");
+            Serial.print(" 0");
         } else {
-            SERIAL.print(' ');
+            Serial.print(' ');
         }
-        SERIAL.print(data[i], HEX);
+        Serial.print(data[i], HEX);
     }
-    SERIAL.print("    ");
+    Serial.print("    ");
     for (uint8_t i = 0; i < numBytes; i++) {
         char c = data[i];
         if (c <= 0x1f || c > 0x7f) {
-            SERIAL.print('.');
+            Serial.print('.');
         } else {
-            SERIAL.print(c);
+            Serial.print(c);
         }
     }
-    SERIAL.println("");
+    Serial.println("");
 #else
     for (uint8_t i = 0; i < numBytes; i++) {
         printf(" %2X", data[i]);
@@ -312,25 +312,6 @@ bool PN532::SAMConfig(void)
 
 /**************************************************************************/
 /*!
-    @brief  Turn the module into power mode  will wake up on I2C or SPI request 
-*/
-/**************************************************************************/
-bool PN532::powerDownMode()
-{
-    pn532_packetbuffer[0] = PN532_COMMAND_POWERDOWN; 
-    pn532_packetbuffer[1] = 0xC0; // I2C or SPI Wakeup
-    pn532_packetbuffer[2] = 0x00; // no IRQ
-
-    DMSG("POWERDOWN\n");
-
-    if (HAL(writeCommand)(pn532_packetbuffer, 4))
-        return false;
-
-    return (0 < HAL(readResponse)(pn532_packetbuffer, sizeof(pn532_packetbuffer)));
-}
-
-/**************************************************************************/
-/*!
     Sets the MxRtyPassiveActivation uint8_t of the RFConfiguration register
 
     @param  maxRetries    0xFF to wait forever, 0x00..0xFE to timeout
@@ -387,24 +368,6 @@ bool PN532::setRFField(uint8_t autoRFCA, uint8_t rFOnOff)
 
 /**************************************************************************/
 /*!
-    Puts PN532 into passive detection state with IRQ while waiting for an ISO14443A target
-
-    @param  cardBaudRate  Baud rate of the card
-
-    @returns 1 if everything executed properly, 0 for an error
-*/
-bool PN532::startPassiveTargetIDDetection(uint8_t cardbaudrate) {
-    pn532_packetbuffer[0] = PN532_COMMAND_INLISTPASSIVETARGET;
-    pn532_packetbuffer[1] = 1; // max 1 cards at once (we can set this to 2 later)
-    pn532_packetbuffer[2] = cardbaudrate;
-
-    if (HAL(writeCommand)(pn532_packetbuffer, 3)) {
-        return 0x0;  // command failed
-    }
-}
-
-/**************************************************************************/
-/*!
     Waits for an ISO14443A target to enter the field
 
     @param  cardBaudRate  Baud rate of the card
@@ -412,13 +375,11 @@ bool PN532::startPassiveTargetIDDetection(uint8_t cardbaudrate) {
                           with the card's UID (up to 7 bytes)
     @param  uidLength     Pointer to the variable that will hold the
                           length of the card's UID.
-    @param  timeout       The number of tries before timing out
-    @param  inlist        If set to true, the card will be inlisted
 
     @returns 1 if everything executed properly, 0 for an error
 */
 /**************************************************************************/
-bool PN532::readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, uint16_t timeout, bool inlist)
+bool PN532::readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uidLength, uint16_t timeout)
 {
     pn532_packetbuffer[0] = PN532_COMMAND_INLISTPASSIVETARGET;
     pn532_packetbuffer[1] = 1;  // max 1 cards at once (we can set this to 2 later)
@@ -462,10 +423,6 @@ bool PN532::readPassiveTargetID(uint8_t cardbaudrate, uint8_t *uid, uint8_t *uid
 
     for (uint8_t i = 0; i < pn532_packetbuffer[5]; i++) {
         uid[i] = pn532_packetbuffer[6 + i];
-    }
-
-    if (inlist) {
-        inListedTag = pn532_packetbuffer[1];
     }
 
     return 1;
@@ -629,19 +586,7 @@ uint8_t PN532::mifareclassic_WriteDataBlock (uint8_t blockNumber, uint8_t *data)
     }
 
     /* Read the response packet */
-    if (0 > HAL(readResponse)(pn532_packetbuffer, sizeof(pn532_packetbuffer))) {
-        return 0;
-    }
-
-    /* Check status */
-    if (pn532_packetbuffer[0] != 0x00) {
-    	DMSG("Status code indicates an error: ");
-    	DMSG_HEX(pn532_packetbuffer[0]);
-    	DMSG("\n");
-        return 0;
-    }
-
-    return 1;
+    return (0 < HAL(readResponse)(pn532_packetbuffer, sizeof(pn532_packetbuffer)));
 }
 
 /**************************************************************************/
@@ -765,6 +710,11 @@ uint8_t PN532::mifareclassic_WriteNDEFURI (uint8_t sectorNumber, uint8_t uriIden
 /**************************************************************************/
 uint8_t PN532::mifareultralight_ReadPage (uint8_t page, uint8_t *buffer)
 {
+    if (page >= 64) {
+        DMSG("Page value out of range\n");
+        return 0;
+    }
+
     /* Prepare the command */
     pn532_packetbuffer[0] = PN532_COMMAND_INDATAEXCHANGE;
     pn532_packetbuffer[1] = 1;                   /* Card number */
@@ -872,53 +822,6 @@ bool PN532::inDataExchange(uint8_t *send, uint8_t sendLength, uint8_t *response,
 
 /**************************************************************************/
 /*!
-    This command is used to support basic data exchanges
-    between the PN532 and a target.
-
-    @param  send            Pointer to the command buffer
-    @param  sendLength      Command length in bytes
-    @param  response        Pointer to response data
-    @param  responseLength  Pointer to the response data length
-*/
-/**************************************************************************/
-bool PN532::inCommunicateThru(uint8_t *send, uint8_t sendLength, uint8_t *response, uint8_t *responseLength)
-{
-  pn532_packetbuffer[0] = PN532_COMMAND_INCOMMUNICATETHRU;
-
-  if (HAL(writeCommand)(pn532_packetbuffer, 1, send, sendLength)) {
-    return false;
-  }
-
-  int16_t status = HAL(readResponse)(response, *responseLength, 1000);
-  if (status < 0) {
-    return false;
-  }
-
-  // check status code
-  if (response[0] != 0x0) {
-      DMSG("Status code indicates an error : 0x");
-      DMSG_HEX(pn532_packetbuffer[0]);
-      DMSG("\n");
-      return false;
-  }
-
-  uint8_t length = status;
-  length -= 1;
-
-  if (length > *responseLength) {
-      length = *responseLength; // silent truncation...
-  }
-
-  for (uint8_t i = 0; i < length; i++) {
-    response[i] = response[i + 1];
-  }
-  *responseLength = length;
-
-  return true;
-}
-
-/**************************************************************************/
-/*!
     @brief  'InLists' a passive target. PN532 acting as reader/initiator,
             peer acting as card/responder.
 */
@@ -984,8 +887,7 @@ int8_t PN532::tgInitAsTarget(uint16_t timeout)
 
         0x01, 0xFE, 0x0F, 0xBB, 0xBA, 0xA6, 0xC9, 0x89, 0x00, 0x00, //NFCID3t: Change this to desired value
 
-        0x0a, 0x46,  0x66, 0x6D, 0x01, 0x01, 0x10, 0x02, 0x02, 0x00, 0x80, // LLCP magic number, version parameter and MIUX
-        0x00
+        0x06, 0x46,  0x66, 0x6D, 0x01, 0x01, 0x10, 0x00// LLCP magic number and version parameter
     };
     return tgInitAsTarget(command, sizeof(command), timeout);
 }

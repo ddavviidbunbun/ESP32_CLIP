@@ -1,0 +1,101 @@
+#include "CLIPmyBLE.hpp"
+
+MyCLIPServerCallBack::MyCLIPServerCallBack(bool &deviceConnected) : isConnected(deviceConnected)
+{
+}
+
+// MyCLIPCharacteristicCallBack::MyCLIPCharacteristicCallBack(String &bleName) : isBLEName(bleName) {}
+
+void MyCLIPServerCallBack::onConnect(BLEServer *server)
+{
+  isConnected = true;
+  Serial.println("Connected");
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+};
+
+void MyCLIPServerCallBack::onDisconnect(BLEServer *server)
+{
+  isConnected = false;
+  Serial.println("Disconnected");
+  BLEDevice::startAdvertising();
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(100);
+};
+
+void MyCLIPCharacteristicCallBack::onWrite(BLECharacteristic *characteristic)
+{
+  std::string value = characteristic->getValue();
+  if (value.length() > 0)
+  {
+    Serial.println(String(value.c_str()));
+    writeFMCLIP(true, String(value.c_str()));
+  }
+}
+
+void initBLECLIP(bool &deviceConnected, String nameBLE)
+{
+  // BLE Init
+  BLEDevice::init(nameBLE.c_str());
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyCLIPServerCallBack(deviceConnected));
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+  pCharacteristic = pService->createCharacteristic(
+      CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_INDICATE);
+  pCharacteristic->setCallbacks(new MyCLIPCharacteristicCallBack());
+  pCharacteristic->addDescriptor(new BLE2902());
+  pService->start();
+
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(false);
+  pAdvertising->setMinPreferred(0x0);
+  BLEDevice::startAdvertising();
+  pinMode(LED_BUILTIN, OUTPUT);
+  delay(200);
+}
+
+bool sendMSGBLECLIP(String msg)
+{
+  if (msg != "NONE" && msg != "TIMED_OUT")
+  {
+    pCharacteristic->setValue(msg.c_str());
+    pCharacteristic->notify();
+    return true;
+  }
+  return false;
+}
+
+void initFMCLIP(void)
+{
+  Serial.println(readFMCLIP(true));
+  if (readFMCLIP(true) != DEFAULT_KEY_1)
+    return;
+  preferences.begin(NAME_SPACE_FM, false);
+  preferences.putString(KEY_1, DEFAULT_KEY_1);
+  preferences.putString(KEY_2, DEFAULT_KEY_2);
+  preferences.end();
+}
+
+String readFMCLIP(bool check)
+{
+  preferences.begin(NAME_SPACE_FM, false);
+  String res;
+  if (check)
+    res = preferences.getString(KEY_1);
+  else
+    res = preferences.getString(KEY_2);
+  preferences.end();
+  return res;
+}
+
+void MyCLIPCharacteristicCallBack::writeFMCLIP(bool check, String value)
+{
+  preferences.begin(NAME_SPACE_FM, false);
+  if (check)
+    preferences.putString(KEY_1, value);
+  else
+    preferences.putString(KEY_2, value);
+  preferences.end();
+}
