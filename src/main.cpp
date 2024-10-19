@@ -8,6 +8,7 @@
 
 hw_timer_t *timer0 = NULL;
 bool isConnectedBLE = false;
+bool isNotifyDevice = false;
 bool isReadTag = false;
 uint count = 0;
 
@@ -28,7 +29,7 @@ void setup()
   Serial.begin(115200);
   Serial.println("System initialized");
   initFMCLIP();
-  initBLECLIP(isConnectedBLE, readFMCLIP(true));
+  initBLECLIP(isConnectedBLE, isNotifyDevice, readFMCLIP(true));
   initNFCPN532CLIP(nfc);
 
   timer0 = timerBegin(0, 80, true);
@@ -45,7 +46,7 @@ void loop()
   {
     if (isMyTag(tagId, newTagIDs) && !(isMyTag(tagId, oldTagIDs)))
     {
-      if (sendMSGBLECLIP(tagId))
+      if (sendMSGBLECLIP(tagId) && isNotifyDevice)
       {
         registerID(tagId, oldTagIDs, oldCount);
         int size = sizeof(noteDurations) / sizeof(int);

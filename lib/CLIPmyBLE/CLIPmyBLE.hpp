@@ -11,7 +11,7 @@
 
 #define NAME_SPACE_FM "PrivateData"
 #define KEY_1 "BLEName"
-#define KEY_2 "MACAdd"
+#define KEY_2 "IMEI_CLIP"
 #define DEFAULT_KEY_1 "CLIP-123"
 #define DEFAULT_KEY_2 "123456789"
 
@@ -19,8 +19,16 @@ Preferences preferences;
 BLEServer *pServer = NULL;
 BLECharacteristic *pCharacteristic = NULL;
 
-void initBLECLIP(bool &deviceConnected, String nameBLE);
+enum statusCode
+{
+    OPEN,
+    CLOSE,
+    WRITE
+};
+
+void initBLECLIP(bool &deviceConnected, bool &deviceNotify, String nameBLE);
 bool sendMSGBLECLIP(String msg);
+void sendREStoFE(String status);
 void initFMCLIP(void);
 String readFMCLIP(bool check);
 
@@ -39,5 +47,11 @@ class MyCLIPCharacteristicCallBack : public BLECharacteristicCallbacks
     void onWrite(BLECharacteristic *characteristic);
 
 public:
-    void writeFMCLIP(bool check, String value);
+    bool &isNotify;
+    MyCLIPCharacteristicCallBack(bool &deviceNotify);
+    void MyCLIPCharacteristicCallBack::splitString(String arr[], std::string val, std::string delimiter = "");
+    void writeFMCLIP(String value);
+    statusCode whatIsTheStatus(String value);
+    void allowNotify(void);
+    void disallowNotify(void);
 };

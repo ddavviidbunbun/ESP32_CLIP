@@ -1,10 +1,8 @@
 #include "CLIPmyBLE.hpp"
 
-MyCLIPServerCallBack::MyCLIPServerCallBack(bool &deviceConnected) : isConnected(deviceConnected)
-{
-}
+MyCLIPServerCallBack::MyCLIPServerCallBack(bool &deviceConnected) : isConnected(deviceConnected) {}
 
-// MyCLIPCharacteristicCallBack::MyCLIPCharacteristicCallBack(String &bleName) : isBLEName(bleName) {}
+MyCLIPCharacteristicCallBack::MyCLIPCharacteristicCallBack(bool &deviceNotify) : isNotify(deviceNotify) {}
 
 void MyCLIPServerCallBack::onConnect(BLEServer *server)
 {
@@ -26,14 +24,68 @@ void MyCLIPServerCallBack::onDisconnect(BLEServer *server)
 void MyCLIPCharacteristicCallBack::onWrite(BLECharacteristic *characteristic)
 {
   std::string value = characteristic->getValue();
-  if (value.length() > 0)
+  String val[2] = {"", ""};
+  splitString(val, value, "#");
+  switch (whatIsTheStatus(val[0]))
   {
-    Serial.println(String(value.c_str()));
-    writeFMCLIP(true, String(value.c_str()));
+  case OPEN:
+    allowNotify();
+    sendREStoFE("OPEN#" + readFMCLIP(false));
+    break;
+  case CLOSE:
+    disallowNotify();
+    break;
+  case WRITE:
+    Serial.println(val[1]);
+    writeFMCLIP(val[1]);
+    sendREStoFE("WRITE");
+    break;
+  default:
+    break;
   }
+  delay(100);
 }
 
-void initBLECLIP(bool &deviceConnected, String nameBLE)
+void MyCLIPCharacteristicCallBack::splitString(String arr[], std::string val, std::string delimiter = "")
+{
+  int start, end = -1 * delimiter.size(), i = 0;
+  do
+  {
+    start = end + delimiter.size();
+    end = val.find(delimiter, start);
+    arr[i] = String(val.substr(start, end - start).c_str());
+    i++;
+  } while (end != -1 && i != 2);
+}
+
+statusCode MyCLIPCharacteristicCallBack::whatIsTheStatus(String value)
+{
+  if (value == "OPEN")
+    return OPEN;
+  if (value == "CLOSE")
+    return CLOSE;
+  if (value == "WRITE")
+    return WRITE;
+}
+
+void MyCLIPCharacteristicCallBack::allowNotify(void)
+{
+  isNotify = true;
+}
+
+void MyCLIPCharacteristicCallBack::disallowNotify(void)
+{
+  isNotify = false;
+}
+
+void MyCLIPCharacteristicCallBack::writeFMCLIP(String value)
+{
+  preferences.begin(NAME_SPACE_FM, false);
+  preferences.putString(KEY_1, value);
+  preferences.end();
+}
+
+void initBLECLIP(bool &deviceConnected, bool &deviceNotify, String nameBLE)
 {
   // BLE Init
   BLEDevice::init(nameBLE.c_str());
@@ -43,7 +95,7 @@ void initBLECLIP(bool &deviceConnected, String nameBLE)
   pCharacteristic = pService->createCharacteristic(
       CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_INDICATE);
-  pCharacteristic->setCallbacks(new MyCLIPCharacteristicCallBack());
+  pCharacteristic->setCallbacks(new MyCLIPCharacteristicCallBack(deviceNotify));
   pCharacteristic->addDescriptor(new BLE2902());
   pService->start();
 
@@ -53,7 +105,12 @@ void initBLECLIP(bool &deviceConnected, String nameBLE)
   pAdvertising->setMinPreferred(0x0);
   BLEDevice::startAdvertising();
   pinMode(LED_BUILTIN, OUTPUT);
-  delay(200);
+  delay(100);
+}
+
+void sendREStoFE(String status)
+{
+  pCharacteristic->setValue(status.c_str());
 }
 
 bool sendMSGBLECLIP(String msg)
@@ -88,14 +145,4 @@ String readFMCLIP(bool check)
     res = preferences.getString(KEY_2);
   preferences.end();
   return res;
-}
-
-void MyCLIPCharacteristicCallBack::writeFMCLIP(bool check, String value)
-{
-  preferences.begin(NAME_SPACE_FM, false);
-  if (check)
-    preferences.putString(KEY_1, value);
-  else
-    preferences.putString(KEY_2, value);
-  preferences.end();
 }
