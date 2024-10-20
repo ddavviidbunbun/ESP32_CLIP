@@ -49,20 +49,7 @@ void loop()
       if (sendMSGBLECLIP(tagId) && isNotifyDevice)
       {
         registerID(tagId, oldTagIDs, oldCount);
-        int size = sizeof(noteDurations) / sizeof(int);
-        for (int thisNote = 0; thisNote < size; thisNote++)
-        {
-
-          // to calculate the note duration, take one second divided by the note type.
-          // e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-          int noteDuration = 1000 / noteDurations[thisNote];
-          tone(BUZZER_PIN, melody[thisNote], noteDuration);
-
-          // to distinguish the notes, set a minimum time between them.
-          // the note's duration + 30% seems to work well:
-          int pauseBetweenNotes = noteDuration * 1.30;
-          delay(pauseBetweenNotes);
-        }
+        toneBuzzer(noteDurations, melody, sizeof(noteDurations) / sizeof(int));
       }
     }
     tagId = "";
@@ -83,6 +70,7 @@ void loop()
     if (digitalRead(WAKEUP_GPIO) == LOW)
     {
       esp_sleep_enable_ext0_wakeup((gpio_num_t)WAKEUP_GPIO, LOW);
+      toneBuzzer(durationsOfSleep, melodyForSleep, sizeof(durationsOfSleep) / sizeof(int));
       delay(200);
       Serial.println("Started to Sleep");
       esp_deep_sleep_start();

@@ -19,13 +19,19 @@ bool readTagID(uint8_t uidtemp[], uint8_t *uidLengthtemp, PN532 &nfcTemp)
   return success;
 }
 
-void tone(int pin, int frequency, int duration)
+void toneBuzzer(int durations[], int melodies[], int size)
 {
-  ledcSetup(SOUND_PWM_CHANNEL, frequency, SOUND_RESOLUTION); // Set up PWM channel
-  ledcAttachPin(pin, SOUND_PWM_CHANNEL);                     // Attach channel to pin
-  ledcWrite(SOUND_PWM_CHANNEL, SOUND_ON);
-  delay(duration);
-  ledcWrite(SOUND_PWM_CHANNEL, SOUND_OFF);
+  for (int thisNote = 0; thisNote < size; thisNote++)
+  {
+    // to calculate the note duration, take one second divided by the note type.
+    // e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+    int noteDuration = 1000 / durations[thisNote];
+    tone(BUZZER_PIN, melodies[thisNote], noteDuration);
+    // to distinguish the notes, set a minimum time between them.
+    // the note's duration + 30% seems to work well:
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+  }
 }
 
 void cleanVarUID(byte nuidPICCTemp[], uint8_t uidtemp[], uint8_t &uidLengthtemp)

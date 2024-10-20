@@ -18,7 +18,7 @@ void initNFCPN532CLIP(PN532 &nfcTemp);
 void registerID(String id, String storageIDs[], uint8_t &count);
 bool isMyTag(String id, String tagIDs[]);
 bool readTagID(uint8_t uidtemp[], uint8_t *uidLengthtemp, PN532 &nfcTemp);
-void tone(int pin, int frequency, int duration);
+void toneBuzzer(int noteDurations[], int melody[], int size);
 void cleanVarUID(byte nuidPICCTemp[], uint8_t uidtemp[], uint8_t &uidLengthtemp);
 void tagToByte(byte nuidPICCtemp[], uint8_t uidtemp[], uint8_t uidLengthtemp);
 void tagToString(byte nuidPICCtemp[], String &tagId);
@@ -53,3 +53,5 @@ int melody[] = {
     NOTE_F5, NOTE_E5, NOTE_E5, NOTE_E5, NOTE_E5,
     NOTE_E5, NOTE_D5, NOTE_D5, NOTE_E5,
     NOTE_D5, NOTE_G5};
+int durationsOfSleep[] = {4, 4};
+int melodyForSleep[] = {NOTE_A1, NOTE_A3};
