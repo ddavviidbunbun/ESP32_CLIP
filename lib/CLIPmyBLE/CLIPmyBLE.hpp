@@ -21,6 +21,7 @@ BLECharacteristic *pCharacteristic = NULL;
 
 enum statusCode
 {
+    NONE,
     OPEN,
     CLOSE,
     WRITE
@@ -52,7 +53,7 @@ public:
     MyCLIPCharacteristicCallBack(bool &deviceNotify);
     void splitString(std::string arr[], std::string val, std::string delimiter);
     void writeFMCLIP(std::string value);
-    statusCode whatIsTheStatus(std::string value);
+    int whatIsTheStatus(std::string value);
     void allowNotify(void);
     void disallowNotify(void);
 };

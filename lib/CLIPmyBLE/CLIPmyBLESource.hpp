@@ -41,6 +41,7 @@ void MyCLIPCharacteristicCallBack::onWrite(BLECharacteristic *characteristic)
     sendREStoFE("WRITE");
     break;
   default:
+    return;
     break;
   }
   delay(100);
@@ -58,7 +59,7 @@ void MyCLIPCharacteristicCallBack::splitString(std::string arr[], std::string va
   } while (end != -1 && i != 2);
 }
 
-statusCode MyCLIPCharacteristicCallBack::whatIsTheStatus(std::string value)
+int MyCLIPCharacteristicCallBack::whatIsTheStatus(std::string value)
 {
   if (value.compare("OPEN") == 0)
     return OPEN;
@@ -66,6 +67,7 @@ statusCode MyCLIPCharacteristicCallBack::whatIsTheStatus(std::string value)
     return CLOSE;
   if (value.compare("WRITE") == 0)
     return WRITE;
+  return NONE;
 }
 
 void MyCLIPCharacteristicCallBack::allowNotify(void)
