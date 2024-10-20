@@ -31,6 +31,7 @@ bool sendMSGBLECLIP(String msg);
 void sendREStoFE(String status);
 void initFMCLIP(void);
 String readFMCLIP(bool check);
+String stdstringToString(std::string value);
 
 class MyCLIPServerCallBack : public BLEServerCallbacks
 {
@@ -49,9 +50,9 @@ class MyCLIPCharacteristicCallBack : public BLECharacteristicCallbacks
 public:
     bool &isNotify;
     MyCLIPCharacteristicCallBack(bool &deviceNotify);
-    void MyCLIPCharacteristicCallBack::splitString(String arr[], std::string val, std::string delimiter = "");
-    void writeFMCLIP(String value);
-    statusCode whatIsTheStatus(String value);
+    void splitString(std::string arr[], std::string val, std::string delimiter);
+    void writeFMCLIP(std::string value);
+    statusCode whatIsTheStatus(std::string value);
     void allowNotify(void);
     void disallowNotify(void);
 };

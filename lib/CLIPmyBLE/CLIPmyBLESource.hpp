@@ -24,7 +24,7 @@ void MyCLIPServerCallBack::onDisconnect(BLEServer *server)
 void MyCLIPCharacteristicCallBack::onWrite(BLECharacteristic *characteristic)
 {
   std::string value = characteristic->getValue();
-  String val[2] = {"", ""};
+  std::string val[2];
   splitString(val, value, "#");
   switch (whatIsTheStatus(val[0]))
   {
@@ -36,7 +36,7 @@ void MyCLIPCharacteristicCallBack::onWrite(BLECharacteristic *characteristic)
     disallowNotify();
     break;
   case WRITE:
-    Serial.println(val[1]);
+    Serial.println(stdstringToString(val[1]));
     writeFMCLIP(val[1]);
     sendREStoFE("WRITE");
     break;
@@ -46,25 +46,25 @@ void MyCLIPCharacteristicCallBack::onWrite(BLECharacteristic *characteristic)
   delay(100);
 }
 
-void MyCLIPCharacteristicCallBack::splitString(String arr[], std::string val, std::string delimiter = "")
+void MyCLIPCharacteristicCallBack::splitString(std::string arr[], std::string val, std::string delimiter)
 {
   int start, end = -1 * delimiter.size(), i = 0;
   do
   {
     start = end + delimiter.size();
     end = val.find(delimiter, start);
-    arr[i] = String(val.substr(start, end - start).c_str());
+    arr[i] = val.substr(start, end - start);
     i++;
   } while (end != -1 && i != 2);
 }
 
-statusCode MyCLIPCharacteristicCallBack::whatIsTheStatus(String value)
+statusCode MyCLIPCharacteristicCallBack::whatIsTheStatus(std::string value)
 {
-  if (value == "OPEN")
+  if (value.compare("OPEN") == 0)
     return OPEN;
-  if (value == "CLOSE")
+  if (value.compare("CLOSE") == 0)
     return CLOSE;
-  if (value == "WRITE")
+  if (value.compare("WRITE") == 0)
     return WRITE;
 }
 
@@ -78,10 +78,10 @@ void MyCLIPCharacteristicCallBack::disallowNotify(void)
   isNotify = false;
 }
 
-void MyCLIPCharacteristicCallBack::writeFMCLIP(String value)
+void MyCLIPCharacteristicCallBack::writeFMCLIP(std::string value)
 {
   preferences.begin(NAME_SPACE_FM, false);
-  preferences.putString(KEY_1, value);
+  preferences.putString(KEY_1, stdstringToString(value));
   preferences.end();
 }
 
@@ -145,4 +145,10 @@ String readFMCLIP(bool check)
     res = preferences.getString(KEY_2);
   preferences.end();
   return res;
+}
+
+String stdstringToString(std::string value)
+{
+  String val = String(value.c_str());
+  return val;
 }
