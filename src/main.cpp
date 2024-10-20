@@ -60,6 +60,7 @@ void loop()
     count = 0;
     Serial.println("X seconds have passed");
     esp_sleep_enable_ext0_wakeup((gpio_num_t)WAKEUP_GPIO, LOW);
+    toneBuzzer(durationsOfSleep, melodyForSleep, sizeof(durationsOfSleep) / sizeof(int));
     delay(1000);
     Serial.println("Started to Sleep");
     esp_deep_sleep_start();
@@ -70,7 +71,6 @@ void loop()
     if (digitalRead(WAKEUP_GPIO) == LOW)
     {
       esp_sleep_enable_ext0_wakeup((gpio_num_t)WAKEUP_GPIO, LOW);
-      toneBuzzer(durationsOfSleep, melodyForSleep, sizeof(durationsOfSleep) / sizeof(int));
       delay(200);
       Serial.println("Started to Sleep");
       esp_deep_sleep_start();
