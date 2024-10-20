@@ -11,9 +11,9 @@
 
 #define NAME_SPACE_FM "PrivateData"
 #define KEY_1 "BLEName"
-#define KEY_2 "IMEI_CLIP"
-#define DEFAULT_KEY_1 "CLIP-123"
-#define DEFAULT_KEY_2 "123456789"
+#define KEY_2 "imeiCLIP"
+#define DEFAULT_KEY_1 "CLIP123"
+#define DEFAULT_KEY_2 "1234567"
 
 Preferences preferences;
 BLEServer *pServer = NULL;
@@ -53,7 +53,7 @@ public:
     MyCLIPCharacteristicCallBack(bool &deviceNotify);
     void splitString(std::string arr[], std::string val, std::string delimiter);
     void writeFMCLIP(std::string value);
-    int whatIsTheStatus(std::string value);
+    statusCode whatIsTheStatus(std::string value);
     void allowNotify(void);
     void disallowNotify(void);
 };

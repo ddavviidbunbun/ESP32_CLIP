@@ -41,10 +41,10 @@ void MyCLIPCharacteristicCallBack::onWrite(BLECharacteristic *characteristic)
     sendREStoFE("WRITE");
     break;
   default:
-    return;
     break;
   }
   delay(100);
+  return;
 }
 
 void MyCLIPCharacteristicCallBack::splitString(std::string arr[], std::string val, std::string delimiter)
@@ -59,7 +59,7 @@ void MyCLIPCharacteristicCallBack::splitString(std::string arr[], std::string va
   } while (end != -1 && i != 2);
 }
 
-int MyCLIPCharacteristicCallBack::whatIsTheStatus(std::string value)
+statusCode MyCLIPCharacteristicCallBack::whatIsTheStatus(std::string value)
 {
   if (value.compare("OPEN") == 0)
     return OPEN;
@@ -113,6 +113,8 @@ void initBLECLIP(bool &deviceConnected, bool &deviceNotify, String nameBLE)
 void sendREStoFE(String status)
 {
   pCharacteristic->setValue(status.c_str());
+  pCharacteristic->notify();
+  Serial.println(status);
 }
 
 bool sendMSGBLECLIP(String msg)
@@ -128,18 +130,32 @@ bool sendMSGBLECLIP(String msg)
 
 void initFMCLIP(void)
 {
-  Serial.println(readFMCLIP(true));
-  if (readFMCLIP(true) != DEFAULT_KEY_1)
-    return;
+
   preferences.begin(NAME_SPACE_FM, false);
-  preferences.putString(KEY_1, DEFAULT_KEY_1);
-  preferences.putString(KEY_2, DEFAULT_KEY_2);
+  if (preferences.isKey(KEY_1))
+  {
+    Serial.println("udah ada key 1");
+  }
+  else
+  {
+    preferences.putString(KEY_1, DEFAULT_KEY_1);
+  }
+  if (preferences.isKey(KEY_2))
+  {
+    Serial.println("udah ada key 2");
+  }
+  else
+  {
+    preferences.putString(KEY_2, DEFAULT_KEY_2);
+  }
   preferences.end();
+  Serial.println(readFMCLIP(true));
+  Serial.println(readFMCLIP(false));
 }
 
 String readFMCLIP(bool check)
 {
-  preferences.begin(NAME_SPACE_FM, false);
+  preferences.begin(NAME_SPACE_FM, true);
   String res;
   if (check)
     res = preferences.getString(KEY_1);
