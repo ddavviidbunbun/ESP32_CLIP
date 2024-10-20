@@ -30,7 +30,7 @@ void MyCLIPCharacteristicCallBack::onWrite(BLECharacteristic *characteristic)
   {
   case OPEN:
     allowNotify();
-    sendREStoFE("OPEN#" + readFMCLIP(false));
+    sendMSGBLECLIP("OPEN#" + readFMCLIP(false));
     break;
   case CLOSE:
     disallowNotify();
@@ -38,7 +38,7 @@ void MyCLIPCharacteristicCallBack::onWrite(BLECharacteristic *characteristic)
   case WRITE:
     Serial.println(stdstringToString(val[1]));
     writeFMCLIP(val[1]);
-    sendREStoFE("WRITE");
+    sendMSGBLECLIP("WRITE");
     break;
   default:
     break;
@@ -108,13 +108,6 @@ void initBLECLIP(bool &deviceConnected, bool &deviceNotify, String nameBLE)
   BLEDevice::startAdvertising();
   pinMode(LED_BUILTIN, OUTPUT);
   delay(100);
-}
-
-void sendREStoFE(String status)
-{
-  pCharacteristic->setValue(status.c_str());
-  pCharacteristic->notify();
-  Serial.println(status);
 }
 
 bool sendMSGBLECLIP(String msg)

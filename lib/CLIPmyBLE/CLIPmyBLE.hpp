@@ -29,7 +29,6 @@ enum statusCode
 
 void initBLECLIP(bool &deviceConnected, bool &deviceNotify, String nameBLE);
 bool sendMSGBLECLIP(String msg);
-void sendREStoFE(String status);
 void initFMCLIP(void);
 String readFMCLIP(bool check);
 String stdstringToString(std::string value);
