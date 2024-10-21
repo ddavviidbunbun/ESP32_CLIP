@@ -79,11 +79,7 @@ void registerID(String id, String storageIDs[], uint8_t &count)
     }
   }
   storageIDs[count] = id;
-  // Serial.print("Before = ");
-  // Serial.print(count);
   count++;
-  // Serial.print(" ; After = ");
-  // Serial.print(count);
   Serial.println("ID has been Registered");
 }
 

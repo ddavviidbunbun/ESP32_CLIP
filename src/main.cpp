@@ -44,14 +44,18 @@ void loop()
 {
   if (isConnectedBLE && readTagIDCLIP(isReadTag))
   {
-    if (isMyTag(tagId, newTagIDs) && !(isMyTag(tagId, oldTagIDs)))
+    if (isNotifyDevice)
     {
-      if (sendMSGBLECLIP(tagId) && isNotifyDevice)
-      {
-        registerID(tagId, oldTagIDs, oldCount);
-        toneBuzzer(noteDurations, melody, sizeof(noteDurations) / sizeof(int));
-      }
+      sendMSGBLECLIP(tagId);
+      toneBuzzer(noteDurations, melody, sizeof(noteDurations) / sizeof(int));
     }
+    // if (isMyTag(tagId, newTagIDs) && !(isMyTag(tagId, oldTagIDs)))
+    // {
+    //   if (sendMSGBLECLIP(tagId) && isNotifyDevice)
+    //   {
+    //     registerID(tagId, oldTagIDs, oldCount);
+    //   }
+    // }
     tagId = "";
   }
 
